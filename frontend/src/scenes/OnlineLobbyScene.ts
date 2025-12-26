@@ -1054,11 +1054,10 @@ export default class OnlineLobbyScene extends Phaser.Scene {
     try {
       const gamepadPlugin = this.input?.gamepad as any
       if (gamepadPlugin) {
-        if (!gamepadPlugin.pads) {
-          gamepadPlugin.pads = []
-        } else if (Array.isArray(gamepadPlugin.pads)) {
-          gamepadPlugin.pads = gamepadPlugin.pads.filter((p: any) => !!p)
-        }
+        // AGGRESSIVE FIX: Just clear the pads array completely.
+        // This ensures Phaser's shutdown loop has nothing to iterate over,
+        // preventing any access to undefined properties.
+        gamepadPlugin.pads = []
       }
     } catch (e) {
       // Ignore - plugin may not exist
