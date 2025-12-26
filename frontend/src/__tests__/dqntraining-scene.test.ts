@@ -1364,7 +1364,7 @@ describe('DQNTrainingScene', () => {
       }
       
       expect(() => (scene as any).shutdown()).not.toThrow()
-      expect((scene as any).input.gamepad.pads).toBe(existingPads)
+      expect((scene as any).input.gamepad.pads).toStrictEqual(existingPads)
     })
 
     it('should handle null input gracefully', () => {
