@@ -48,6 +48,23 @@ export class UIManager {
   private bossIndicatorArrow?: Phaser.GameObjects.Text;
   private bossIndicatorText?: Phaser.GameObjects.Text;
 
+  private safeSwitchScene(sceneKey: string) {
+    // Pre-shutdown cleanup to prevent Phaser GamepadPlugin crash
+    try {
+      const gamepadPlugin = this.scene.input?.gamepad as any;
+      if (gamepadPlugin) {
+        // Force clear pads array to prevent iteration over undefined elements during shutdown
+        if (Array.isArray(gamepadPlugin.pads)) {
+          gamepadPlugin.pads = [];
+        }
+      }
+    } catch (e) {
+      console.warn('Gamepad cleanup failed:', e);
+    }
+    
+    this.scene.scene.start(sceneKey);
+  }
+
   constructor(scene: GameScene) {
     this.scene = scene;
   }
@@ -435,7 +452,7 @@ export class UIManager {
         
         // Navigate to menu after a short delay
         this.scene.time.delayedCall(1000, () => {
-           this.scene.scene.start('MenuScene');
+           this.safeSwitchScene('MenuScene');
         });
       });
     }
@@ -765,7 +782,7 @@ export class UIManager {
     // Safety check: Level 110 is the final level - should go to EndingScene instead
     if (level >= 110 && this.scene.gameMode === 'levels') {
       console.log(`🏆 Level ${level} complete - transitioning to Ending Scene`);
-      this.scene.scene.start('EndingScene');
+      this.safeSwitchScene('EndingScene');
       return;
     }
 
@@ -1015,7 +1032,7 @@ export class UIManager {
 
     homeBtn.on('pointerdown', () => {
       this.scene.tweens.killAll();
-      this.scene.scene.start('MenuScene');
+      this.safeSwitchScene('MenuScene');
     });
 
     // Keyboard shortcuts
@@ -1131,13 +1148,13 @@ export class UIManager {
     // Button click handler
     menuBtn.on('pointerdown', () => {
       this.scene.tweens.killAll();
-      this.scene.scene.start('MenuScene');
+      this.safeSwitchScene('MenuScene');
     });
 
     // Keyboard shortcut
     this.scene.input.keyboard!.once('keydown-M', () => {
       this.scene.tweens.killAll();
-      this.scene.scene.start('MenuScene');
+      this.safeSwitchScene('MenuScene');
     });
     
     this.scene.input.keyboard!.once('keydown-SPACE', () => {
@@ -1227,7 +1244,7 @@ export class UIManager {
         console.log('⚠️ Score submission failed on quit:', err);
       }).finally(() => {
         this.scene.physics.resume();
-        this.scene.scene.start('MenuScene');
+        this.safeSwitchScene('MenuScene');
       });
     });
 
