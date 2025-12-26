@@ -7227,25 +7227,29 @@ export default class GameScene extends Phaser.Scene {
     try {
       const gamepadPlugin = this.input?.gamepad as any
       if (gamepadPlugin) {
-        if (!gamepadPlugin.pads) {
-          gamepadPlugin.pads = []
-        } else if (Array.isArray(gamepadPlugin.pads)) {
-          // Filter out null/undefined pads
-          gamepadPlugin.pads = gamepadPlugin.pads.filter((p: any) => !!p)
-        }
+        // AGGRESSIVE FIX: Just clear the pads array completely.
+        // This ensures Phaser's shutdown loop has nothing to iterate over,
+        // preventing any access to undefined properties.
+        gamepadPlugin.pads = []
       }
     } catch (e) {
       // Ignore - plugin may not exist
     }
 
     // Remove native gamepad listener
-    if (this.gamepadConnectedHandler) {
-      window.removeEventListener('gamepadconnected', this.gamepadConnectedHandler)
-      this.gamepadConnectedHandler = null
+    try {
+      if (this.gamepadConnectedHandler) {
+        window.removeEventListener('gamepadconnected', this.gamepadConnectedHandler)
+        this.gamepadConnectedHandler = null
+      }
+    } catch (e) {
+      console.warn('Error removing gamepad listener:', e)
     }
     
     // Stop and clean up music when scene shuts down using MusicManager
-    this.musicManager.stopMusic()
+    if (this.musicManager) {
+      this.musicManager.stopMusic()
+    }
     
     // Clean up DQN agent if it exists
     if (this.dqnAgent) {
@@ -7254,7 +7258,9 @@ export default class GameScene extends Phaser.Scene {
     }
     
     // Clean up in-game chat input if open
-    this.uiManager.closeInGameChat()
+    if (this.uiManager) {
+      this.uiManager.closeInGameChat()
+    }
   }
 
   // =====================================
