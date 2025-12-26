@@ -57,6 +57,7 @@ export default class GameScene extends Phaser.Scene {
     d: Phaser.Input.Keyboard.Key
   }
   private gamepad: Phaser.Input.Gamepad.Gamepad | null = null
+  private gamepadConnectedHandler: ((e: GamepadEvent) => void) | null = null
   private virtualGamepad?: VirtualGamepad
   public uiManager!: UIManager
   // @ts-expect-error - assistKey is set but only used for reference
@@ -1253,7 +1254,7 @@ export default class GameScene extends Phaser.Scene {
       })
 
       // Safari fix: Also listen to native gamepadconnected event
-      window.addEventListener('gamepadconnected', (e: GamepadEvent) => {
+      this.gamepadConnectedHandler = (e: GamepadEvent) => {
         console.log('🎮 [Native] Gamepad connected in GameScene:', e.gamepad.id)
         // Try to sync with Phaser
         if (!this.gamepad && this.input.gamepad && this.input.gamepad.total > 0) {
@@ -1261,7 +1262,8 @@ export default class GameScene extends Phaser.Scene {
           console.log('🎮 Synced gamepad from native event:', this.gamepad?.id)
           this.uiManager.showTip('gamepad', 'Gamepad connected! Left stick/D-pad: Move, A: Jump, RT: Shoot')
         }
-      })
+      }
+      window.addEventListener('gamepadconnected', this.gamepadConnectedHandler)
     }
 
     // Add debug toggle key
@@ -7219,16 +7221,27 @@ export default class GameScene extends Phaser.Scene {
   }
 
   shutdown() {
-    // Workaround for Phaser GamepadPlugin bug: ensure pads array exists
+    // Workaround for Phaser GamepadPlugin bug: ensure pads array exists and has no holes
     // This prevents "Cannot read properties of undefined (reading 'removeAllListeners')"
-    // when shutting down a scene before any gamepad was connected
+    // when shutting down a scene before any gamepad was connected or after disconnection
     try {
       const gamepadPlugin = this.input?.gamepad as any
-      if (gamepadPlugin && !gamepadPlugin.pads) {
-        gamepadPlugin.pads = []
+      if (gamepadPlugin) {
+        if (!gamepadPlugin.pads) {
+          gamepadPlugin.pads = []
+        } else if (Array.isArray(gamepadPlugin.pads)) {
+          // Filter out null/undefined pads
+          gamepadPlugin.pads = gamepadPlugin.pads.filter((p: any) => !!p)
+        }
       }
     } catch (e) {
       // Ignore - plugin may not exist
+    }
+
+    // Remove native gamepad listener
+    if (this.gamepadConnectedHandler) {
+      window.removeEventListener('gamepadconnected', this.gamepadConnectedHandler)
+      this.gamepadConnectedHandler = null
     }
     
     // Stop and clean up music when scene shuts down using MusicManager

@@ -518,13 +518,13 @@ describe('InventoryScene', () => {
       expect((scene.input.gamepad as any).pads).toEqual([])
     })
 
-    it('should not modify existing pads array', () => {
+    it('should not modify existing pads array content if valid', () => {
       const existingPads = [{ id: 'gamepad1' }]
       scene.input.gamepad = { pads: existingPads } as any
       
       scene.shutdown()
       
-      expect((scene.input.gamepad as any).pads).toBe(existingPads)
+      expect((scene.input.gamepad as any).pads).toStrictEqual(existingPads)
     })
   })
 

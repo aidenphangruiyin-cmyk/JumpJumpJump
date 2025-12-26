@@ -370,11 +370,15 @@ export default class LeaderboardScene extends Phaser.Scene {
   }
 
   shutdown() {
-    // Workaround for Phaser GamepadPlugin bug: ensure pads array exists
+    // Workaround for Phaser GamepadPlugin bug: ensure pads array exists and has no holes
     try {
       const gamepadPlugin = this.input?.gamepad as any
-      if (gamepadPlugin && !gamepadPlugin.pads) {
-        gamepadPlugin.pads = []
+      if (gamepadPlugin) {
+        if (!gamepadPlugin.pads) {
+          gamepadPlugin.pads = []
+        } else if (Array.isArray(gamepadPlugin.pads)) {
+          gamepadPlugin.pads = gamepadPlugin.pads.filter((p: any) => !!p)
+        }
       }
     } catch (e) {
       // Ignore

@@ -609,7 +609,7 @@ describe('BossGalleryScene', () => {
       expect(gamepadPlugin.pads).toEqual([])
     })
 
-    it('should not modify existing pads array', () => {
+    it('should not modify existing pads array content if valid', () => {
       const existingPads = [{ id: 'test' }]
       const gamepadPlugin: any = { pads: existingPads }
       scene.input = {
@@ -618,7 +618,7 @@ describe('BossGalleryScene', () => {
       
       scene.shutdown()
       
-      expect(gamepadPlugin.pads).toBe(existingPads)
+      expect(gamepadPlugin.pads).toStrictEqual(existingPads)
     })
   })
 
